@@ -1,0 +1,28 @@
+{
+  "name": "forgelabs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --host 127.0.0.1 --port 3100",
+    "build": "nuxt build",
+    "start": "bun .output/server/index.mjs",
+    "prepare": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "db:migrate": "bun scripts/migrate.ts",
+    "test": "bun test tests",
+    "test:worker": "python3 -m unittest discover -s worker/tests"
+  },
+  "dependencies": {
+    "nuxt": "^4.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0",
+    "mysql2": "^3.14.0",
+    "zod": "^3.24.0",
+    "lucide-vue-next": "^0.468.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vue-tsc": "^3.0.0",
+    "@types/bun": "^1.2.0"
+  }
+}
