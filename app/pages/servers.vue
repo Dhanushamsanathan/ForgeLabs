@@ -6,7 +6,7 @@ const credentials = ref<{ id: string; token: string } | null>(null)
 const origin = ref('http://127.0.0.1:3100')
 onMounted(() => { origin.value = window.location.origin })
 const command = computed(() => credentials.value ? `FORGELABS_URL=${origin.value}\nFORGELABS_WORKER_ID=${credentials.value.id}\nFORGELABS_WORKER_TOKEN=${credentials.value.token}\nSTT_REPO=/absolute/path/to/stt-tamil\nFORGELABS_DATA_ROOT=/absolute/path/to/datasets\nFORGELABS_RUN_ROOT=/absolute/path/to/forgelabs-runs` : '')
-async function save() { busy.value = true; error.value = ''; try { credentials.value = await $fetch('/api/servers', { method: 'POST', body: form }); await refresh() } catch (e) { error.value = apiError(e) } finally { busy.value = false } }
+async function save() { busy.value = true; error.value = ''; try { credentials.value = await $fetch<{ id: string; token: string }>('/api/servers', { method: 'POST', body: form }); await refresh() } catch (e) { error.value = apiError(e) } finally { busy.value = false } }
 async function copy() { try { await navigator.clipboard.writeText(command.value); useNotice().notify('Worker configuration copied') } catch { error.value = 'Select and copy the configuration below.' } }
 function close() { modal.value = false; credentials.value = null; form.name = ''; form.description = ''; error.value = '' }
 </script>

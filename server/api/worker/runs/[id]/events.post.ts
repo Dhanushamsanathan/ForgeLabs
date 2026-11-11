@@ -2,7 +2,7 @@ import { eventInput } from '../../../../../shared/validation'
 export default defineEventHandler(async event => {
   const run = await ownedRun(event)
   const { events } = await input(event, eventInput)
-  if (run.status !== 'running') throw createError({ statusCode: 409, statusMessage: 'Run is not active' })
+  if (run.status !== 'running') return { ok: true, cancelRequested: run.cancelRequested, terminal: true }
   const connection = await database().getConnection()
   try {
     await connection.beginTransaction()

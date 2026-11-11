@@ -69,7 +69,7 @@ def main(job_path: Path):
             raise RuntimeError('CUDA GPU not available in this worker environment')
         if not torch.cuda.is_bf16_supported():
             raise RuntimeError('The current training recipe requires BF16 support')
-        model_config = AutoConfig.from_pretrained(run['snapshot']['model']['reference'], trust_remote_code=False)
+        model_config = AutoConfig.from_pretrained(arguments[arguments.index('--model') + 1], trust_remote_code=False)
         if model_config.model_type != 'whisper':
             raise ValueError('This training recipe requires a Whisper model')
         set_seed(config['seed'])

@@ -111,6 +111,11 @@ class Agent:
         events, event_offset = self.collect(output / 'events.jsonl', self.state['eventOffset'], True)
         logs, log_offset = self.collect(output / 'output.log', self.state['logOffset'], False)
         response = self.post(f"runs/{self.state['id']}/events", {'events': events + logs})
+        if response.get('terminal'):
+            self.state = None
+            self.child = None
+            self.persist()
+            return
         self.state.update(eventOffset=event_offset, logOffset=log_offset)
         self.persist()
         if response['cancelRequested']:
