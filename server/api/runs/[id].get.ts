@@ -1,4 +1,4 @@
-import type { Run } from '../../../shared/types'
+import type { Run } from '#shared/types'
 export default defineEventHandler(async event => {
   const id = getRouterParam(event, 'id')
   const [run] = await rows<Run>('SELECT * FROM runs WHERE id = ?', [id])

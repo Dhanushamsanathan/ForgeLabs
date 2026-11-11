@@ -1,4 +1,4 @@
-import type { Overview, Server } from '../../shared/types'
+import type { Overview, Server } from '#shared/types'
 export function useWorkspace() {
   const request = useRequestFetch()
   return useAsyncData<Overview>('workspace', () => request('/api/overview'), {

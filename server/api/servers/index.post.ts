@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { serverInput } from '../../../shared/validation'
+import { serverInput } from '#shared/validation'
 export default defineEventHandler(async event => {
   const data = await input(event, serverInput)
   const id = randomUUID(), token = newToken()

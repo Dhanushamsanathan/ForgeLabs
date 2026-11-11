@@ -1,4 +1,4 @@
-import { eventInput } from '../../../../../shared/validation'
+import { eventInput } from '#shared/validation'
 export default defineEventHandler(async event => {
   const run = await ownedRun(event)
   const { events } = await input(event, eventInput)

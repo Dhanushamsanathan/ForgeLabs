@@ -1,4 +1,4 @@
-import type { Server, Model, Dataset, Run } from '../../shared/types'
+import type { Server, Model, Dataset, Run } from '#shared/types'
 export default defineEventHandler(async () => {
   const [servers, models, datasets, runs] = await Promise.all([
     rows<Server>('SELECT id, name, description, telemetry, lastSeen, createdAt FROM servers ORDER BY createdAt DESC'),

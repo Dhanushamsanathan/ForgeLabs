@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RunEvent } from '../../shared/types'
+import type { RunEvent } from '#shared/types'
 const props = withDefaults(defineProps<{ events: RunEvent[]; metric?: string; title?: string }>(), { metric: 'loss', title: 'Training loss' })
 const points = computed(() => props.events.filter(e => typeof e.payload[props.metric] === 'number' && Number.isFinite(e.payload[props.metric])).map(e => ({ x: e.step ?? 0, y: Number(e.payload[props.metric]) })))
 const bounds = computed(() => {

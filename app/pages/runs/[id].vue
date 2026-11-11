@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Run, RunEvent, Artifact } from '../../../shared/types'
+import type { Run, RunEvent, Artifact } from '#shared/types'
 const id = String(useRoute().params.id)
 const { data, error, refresh } = await useFetch<{ run: Run; metrics: RunEvent[]; logs: RunEvent[]; artifacts: Artifact[] }>(`/api/runs/${id}`, { server: false })
 const { data: workspace } = await useWorkspace()

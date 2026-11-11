@@ -10,7 +10,8 @@
     "typecheck": "nuxt typecheck",
     "db:migrate": "bun scripts/migrate.ts",
     "test": "bun test tests",
-    "test:worker": "python3 -m unittest discover -s worker/tests"
+    "test:worker": "python3 -m unittest discover -s worker/tests",
+    "test:integration": "bun scripts/check-integration.ts"
   },
   "dependencies": {
     "@lucide/vue": "^1.72.0",

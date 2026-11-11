@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defaults } from '../../../shared/validation'
+import { defaults } from '#shared/validation'
 const { data } = await useWorkspace()
 const route = useRoute()
 const form = reactive({ name: '', modelId: String(route.query.model || ''), datasetId: '', serverId: '', config: { ...defaults } })

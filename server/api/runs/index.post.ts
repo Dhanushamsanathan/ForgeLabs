@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { runInput } from '../../../shared/validation'
+import { runInput } from '#shared/validation'
 export default defineEventHandler(async event => {
   const data = await input(event, runInput)
   const [[model], [dataset], [server]] = await Promise.all([
