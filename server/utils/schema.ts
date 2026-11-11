@@ -1,0 +1,40 @@
+export const schema = [
+  `CREATE TABLE IF NOT EXISTS servers (
+    id CHAR(36) PRIMARY KEY, name VARCHAR(100) NOT NULL, description TEXT NOT NULL,
+    tokenHash CHAR(64) NOT NULL, telemetry JSON NULL, lastSeen DATETIME(3) NULL,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+  )`,
+  `CREATE TABLE IF NOT EXISTS models (
+    id CHAR(36) PRIMARY KEY, name VARCHAR(100) NOT NULL, source VARCHAR(30) NOT NULL,
+    reference VARCHAR(1000) NOT NULL, family VARCHAR(50) NOT NULL,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+  )`,
+  `CREATE TABLE IF NOT EXISTS datasets (
+    id CHAR(36) PRIMARY KEY, name VARCHAR(100) NOT NULL, source VARCHAR(30) NOT NULL,
+    reference VARCHAR(1000) NOT NULL, config VARCHAR(100) NOT NULL,
+    labelOrigin VARCHAR(30) NOT NULL, description TEXT NOT NULL,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+  )`,
+  `CREATE TABLE IF NOT EXISTS runs (
+    id CHAR(36) PRIMARY KEY, name VARCHAR(100) NOT NULL, serverId CHAR(36) NOT NULL,
+    modelId CHAR(36) NOT NULL, datasetId CHAR(36) NOT NULL, status VARCHAR(20) NOT NULL,
+    cancelRequested BOOLEAN NOT NULL DEFAULT FALSE, config JSON NOT NULL, snapshot JSON NOT NULL,
+    error TEXT NULL, startedAt DATETIME(3) NULL, finishedAt DATETIME(3) NULL,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX runs_queue (serverId, status, createdAt),
+    FOREIGN KEY (serverId) REFERENCES servers(id), FOREIGN KEY (modelId) REFERENCES models(id),
+    FOREIGN KEY (datasetId) REFERENCES datasets(id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS run_events (
+    id CHAR(36) PRIMARY KEY, runId CHAR(36) NOT NULL, kind VARCHAR(20) NOT NULL,
+    step BIGINT NULL, payload JSON NOT NULL, sequence BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX events_run (runId, sequence), FOREIGN KEY (runId) REFERENCES runs(id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS artifacts (
+    id CHAR(36) PRIMARY KEY, runId CHAR(36) NOT NULL, name VARCHAR(100) NOT NULL,
+    path VARCHAR(1000) NOT NULL, kind VARCHAR(40) NOT NULL,
+    createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    FOREIGN KEY (runId) REFERENCES runs(id)
+  )`,
+]
