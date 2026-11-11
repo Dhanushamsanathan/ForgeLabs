@@ -13,16 +13,17 @@
     "test:worker": "python3 -m unittest discover -s worker/tests"
   },
   "dependencies": {
+    "@lucide/vue": "^1.72.0",
+    "mysql2": "^3.14.0",
     "nuxt": "^4.0.0",
     "vue": "^3.5.0",
-    "vue-router": "^4.5.0",
-    "mysql2": "^3.14.0",
-    "zod": "^3.24.0",
-    "lucide-vue-next": "^0.468.0"
+    "vue-router": "^5",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/bun": "^1.2.0",
     "typescript": "^5.8.0",
-    "vue-tsc": "^3.0.0",
-    "@types/bun": "^1.2.0"
+    "vue-tsc": "^3.0.0"
   }
 }
