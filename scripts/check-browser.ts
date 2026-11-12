@@ -7,6 +7,7 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } })
 const errors: string[] = []
 page.on('pageerror', error => errors.push(error.message))
+page.on('console', message => { if (/hydration.*mismatch/i.test(message.text())) errors.push(message.text()) })
 await mkdir('test-results', { recursive: true })
 try {
   await page.goto(url)
@@ -39,12 +40,31 @@ try {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(url)
   await page.getByRole('heading', { name: 'Overview.' }).waitFor()
+  await page.locator('.table-scroll .run-table').waitFor()
+  const firstCell = await page.locator('.run-table td').first().boundingBox()
+  if (!firstCell || firstCell.x < 0 || firstCell.x > 100) throw new Error('Mobile experiment names are clipped')
   await page.screenshot({ path: 'test-results/overview-mobile.png', fullPage: true })
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
-  if (overflow) throw new Error('Mobile page overflows horizontally')
+  if (overflow) {
+    console.error(await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, elements: [...document.querySelectorAll("body *")].filter(el => el.getBoundingClientRect().right > innerWidth && el.getBoundingClientRect().width > 0).map(el => ({ tag: el.tagName, class: el.getAttribute("class"), right: el.getBoundingClientRect().right, position: getComputedStyle(el).position, overflow: getComputedStyle(el).overflow })).filter(el => !["path", "rect", "svg"].includes(el.tag)) })))
+    throw new Error('Mobile page overflows horizontally')
+  }
   await page.getByRole('button', { name: 'Open navigation' }).click()
   await page.getByRole('link', { name: 'Compute', exact: true }).click()
   await page.getByRole('heading', { name: 'Compute.' }).waitFor()
+  await page.getByRole('button', { name: 'Connect server', exact: true }).click()
+  await page.getByLabel('Server name', { exact: true }).fill('Browser connector')
+  await page.getByLabel('SSH address', { exact: false }).fill('user@test-gpu')
+  await page.getByLabel('Training folder on server', { exact: false }).fill('/srv/stt-tamil')
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download connector', exact: true }).click()
+  const download = await downloadPromise
+  if (!download.suggestedFilename().startsWith('forgelabs-connect-')) throw new Error('Connector download missing')
+  await page.getByRole('heading', { name: 'Run your connector' }).waitFor()
+  await page.getByText('Waiting for the server to connect…', { exact: true }).waitFor()
+  await page.screenshot({ path: 'test-results/connect-server-mobile.png', fullPage: true })
+  // This private download is intentionally not retained in test-results.
+  await download.delete()
   if (errors.length) throw new Error(errors.join('\n'))
   console.log('Browser checks passed: login, navigation, model creation, job queue/cancel, metrics, and mobile layout.')
 } catch (error) {

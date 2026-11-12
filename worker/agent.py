@@ -144,6 +144,8 @@ class Agent:
     def tick(self):
         if time.time() - self.last_heartbeat >= 10:
             self.post('heartbeat', self.telemetry())
+            if not self.last_heartbeat:
+                print('Connected to ForgeLabs. Your server is now online.', flush=True)
             self.last_heartbeat = time.time()
         if self.state:
             self.process_active()
@@ -168,7 +170,7 @@ def main():
     lock = (agent.root / f'.worker-{agent.id}.lock').open('w')
     try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError: raise SystemExit('This worker is already running') from None
-    print(f'ForgeLabs worker {VERSION} connected to configured API. Ctrl+C stops polling, not the training child.', flush=True)
+    print(f'ForgeLabs worker {VERSION} starting. Ctrl+C stops polling, not the training child.', flush=True)
     while True:
         try:
             agent.tick()

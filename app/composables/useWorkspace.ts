@@ -2,7 +2,7 @@ import type { Overview, Server } from '#shared/types'
 export function useWorkspace() {
   const request = useRequestFetch()
   return useAsyncData<Overview>('workspace', () => request('/api/overview'), {
-    server: false, default: () => ({ servers: [], models: [], datasets: [], runs: [] }),
+    default: () => ({ servers: [], models: [], datasets: [], runs: [] }),
   })
 }
 export const isOnline = (server: Server) => Boolean(server.lastSeen && Date.now() - new Date(server.lastSeen).getTime() < 45000)

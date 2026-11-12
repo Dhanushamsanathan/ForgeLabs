@@ -13,6 +13,6 @@ export default defineNuxtConfig({
     meta: [{ name: 'description', content: 'Your models. Your infrastructure. One training workspace.' }],
     link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
   } },
-  nitro: { preset: 'bun' },
+  nitro: { preset: 'bun', serverAssets: [{ baseName: 'worker', dir: './worker' }] },
   typescript: { strict: true },
 })

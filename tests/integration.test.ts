@@ -1,5 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { defaults } from '../shared/validation'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 const url = process.env.FORGELABS_TEST_URL
 const suite = url ? describe : describe.skip
 suite('MySQL-backed API and worker lifecycle', () => {
@@ -69,4 +72,62 @@ suite('MySQL-backed API and worker lifecycle', () => {
     expect((await (await request('/api/worker/claim', {}, worker())).json()).run).toBeNull()
     expect((await (await request(`/api/runs/${queued.id}`)).json()).run.status).toBe('cancelled')
   })
+  test('real Python worker reports a preflight failure without loading a GPU model', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'forgelabs-worker-test-'))
+    await mkdir(join(root, 'data'))
+    const failed = await (await request('/api/runs', { name: 'Worker preflight integration', serverId: secondServer.id, modelId: model.id, datasetId: dataset.id, config: defaults })).json()
+    const agent = Bun.spawn(['python3', resolve('worker/agent.py')], { env: { ...process.env, FORGELABS_URL: url!, FORGELABS_WORKER_ID: secondServer.id, FORGELABS_WORKER_TOKEN: secondServer.token, STT_REPO: join(root, 'missing-repo'), FORGELABS_DATA_ROOT: join(root, 'data'), FORGELABS_RUN_ROOT: join(root, 'runs') }, stdout: 'ignore', stderr: 'inherit' })
+    try {
+      let detail: any
+      for (let i = 0; i < 60; i++) {
+        detail = await (await request(`/api/runs/${failed.id}`)).json()
+        if (detail.run.status === 'failed') break
+        await Bun.sleep(200)
+      }
+      expect(detail.run.status).toBe('failed')
+      expect(detail.run.error).toContain('Path must be inside configured root')
+      expect(detail.logs.length).toBeGreaterThan(0)
+    } finally { agent.kill(); await agent.exited; await rm(root, { recursive: true, force: true }) }
+  }, 20000)
+  test('private connector packages the worker and installs a real polling agent', async () => {
+    const paired = await (await request('/api/servers', { name: 'Connector integration' })).json()
+    const root = await mkdtemp(join(tmpdir(), 'forgelabs-connector-'))
+    const repo = join(root, 'training folder')
+    await mkdir(join(repo, 'scripts'), { recursive: true })
+    await writeFile(join(repo, 'scripts/train_lora.py'), '# test fixture')
+    await writeFile(join(repo, 'scripts/train_relabeled.py'), '# test fixture')
+    const config = { ...paired, mode: 'ssh', url, host: 'test-worker', repo, python: 'python3', gpu: '0' }
+    let agent: ReturnType<typeof Bun.spawn> | undefined
+    try {
+      expect((await request('/api/servers/connector', config, { Cookie: '' })).status).toBe(401)
+      expect((await request('/api/servers/connector', { ...config, token: '0'.repeat(64) })).status).toBe(403)
+      expect((await request('/api/servers/connector', { ...config, host: '-oProxyCommand=bad' })).status).toBe(400)
+      const response = await request('/api/servers/connector', config)
+      expect(response.status).toBe(200)
+      expect(response.headers.get('cache-control')).toBe('no-store')
+      let source = await response.text()
+      const encoded = source.match(/base64.b64decode\('([A-Za-z0-9+/=]+)'\)/)![1]!
+      const payload = JSON.parse(Buffer.from(encoded, 'base64').toString())
+      expect(Object.keys(payload.files).sort()).toEqual(['agent.py', 'recipe.py', 'runner.py'])
+      // Exercise the same installer locally; actual SSH needs the user's server.
+      payload.mode = 'direct'
+      source = source.replace(encoded, Buffer.from(JSON.stringify(payload)).toString('base64'))
+      const script = join(root, 'connect.py')
+      await writeFile(script, source, { mode: 0o600 })
+      agent = Bun.spawn([process.env.FORGELABS_TEST_PYTHON || 'python3', script], { env: { ...process.env, HOME: root }, stdout: 'ignore', stderr: 'inherit' })
+      let connected = false
+      for (let i = 0; i < 50; i++) {
+        const overview = await (await request('/api/overview')).json()
+        connected = overview.servers.some((s: any) => s.id === paired.id && s.lastSeen)
+        if (connected) break
+        await Bun.sleep(200)
+      }
+      expect(connected).toBe(true)
+      expect(await Bun.file(join(root, '.local/share/forgelabs', paired.id, 'worker.env')).exists()).toBe(true)
+    } finally {
+      if (agent) { agent.kill(); await agent.exited }
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 20000)
+
 })

@@ -55,41 +55,40 @@ The development bootstrap may create an ignored `.env` locally; never commit it.
 
 ## Connect your GPU server
 
-1. Open **Compute → Connect server** and save the generated worker token.
-2. Clone ForgeLabs on the GPU server.
-3. Keep the existing `stt-tamil` checkout and its working Python environment.
-   Its dependencies (PyTorch, Transformers, PEFT, datasets, jiwer, TensorBoard,
-   audio decoding libraries) are not installed or altered by this application.
-4. Create an environment file readable only by the worker owner:
-
-```dotenv
-FORGELABS_URL=https://your-forgelabs-host
-FORGELABS_WORKER_ID=the-id-from-the-UI
-FORGELABS_WORKER_TOKEN=the-token-shown-once
-STT_REPO=/home/you/stt-tamil
-FORGELABS_DATA_ROOT=/home/you/stt-tamil/data
-FORGELABS_MODEL_ROOT=/home/you/models
-FORGELABS_RUN_ROOT=/home/you/forgelabs-runs
-CUDA_VISIBLE_DEVICES=0
-# HF_TOKEN=...   Only if private Hugging Face repositories require it.
-```
-
-5. With the training Python environment activated, run:
+1. Open **Compute → Connect server**.
+2. Enter a server name, your SSH address/alias, and the server's `stt-tamil` folder.
+3. Under **Advanced settings**, choose its training Python executable and an
+   available GPU. Dataset/model roots and SSH port can also be customized.
+4. Click **Download connector**, then run the displayed command on your Mac:
 
 ```sh
-python /path/to/ForgeLabs/worker/agent.py --env-file /path/to/worker.env
+python3 ~/Downloads/forgelabs-connect-<worker-id>.py
 ```
 
-Use tmux or a service manager. The worker polls outward over HTTPS; ForgeLabs
-does not require SSH credentials. Localhost is not reachable from another
-machine: use a secured tunnel or host the API behind HTTPS. Only one agent
-process may use a given worker ID. Explicitly assign a GPU to avoid conflicts
-with other work on shared servers; telemetry currently reports all visible GPUs
-from `nvidia-smi`, while `CUDA_VISIBLE_DEVICES` controls training allocation.
+The private connector includes the worker files and credential. It uses your
+existing SSH login, sets up a loopback-only reverse tunnel to the local app,
+installs the worker under `~/.local/share/forgelabs/<worker-id>/` on the GPU server,
+and starts it. No separate clone, environment file editing, or tunnel command is
+needed. The UI confirms connection only after a successful heartbeat.
 
-The API has single-operator authentication. This is not a hardened multi-tenant
-public service: add tenant isolation, quotas, token rotation/revocation, and
-production operational controls before offering it to untrusted users.
+Keep the terminal open and the Mac awake. Run the same connector again to
+reconnect; it preserves run state and refuses a duplicate active worker. The
+connector does not install CUDA or training dependencies, start a training job,
+or modify your `stt-tamil` checkout. Choose Python 3.10+ from its existing training
+environment. SSH host verification and login prompts remain in your terminal.
+
+For a hosted HTTPS instance, choose **Direct to a hosted ForgeLabs**, copy the
+connector onto the GPU server, activate its training environment, and run it
+there. No SSH tunnel is used in this mode. Keep connector files private: they
+contain a worker credential. The generated command contains no credential.
+
+Advanced/manual deployments can still run `worker/agent.py --env-file worker.env`
+with `FORGELABS_URL`, `FORGELABS_WORKER_ID`, `FORGELABS_WORKER_TOKEN`, `STT_REPO`,
+`FORGELABS_DATA_ROOT`, `FORGELABS_MODEL_ROOT`, `FORGELABS_RUN_ROOT`, and
+`CUDA_VISIBLE_DEVICES`. Use a service manager for a persistent hosted worker.
+`HF_TOKEN`, when required, belongs in the training environment on the GPU server.
+GPU telemetry reports all GPUs returned by `nvidia-smi`; `CUDA_VISIBLE_DEVICES`
+controls training allocation.
 
 ## First training experiment
 
